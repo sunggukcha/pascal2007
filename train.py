@@ -21,6 +21,16 @@ def get_args():
 						help='Number of workers for dataloader')
 
 	# training options
+	parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
+                    choices=model_names,
+                    help='model architecture: ' +
+                        ' | '.join(model_names) +
+                        ' (default: resnet18)')
+	parser.add_argument('--pretrained', default=True, type=bool,
+						help='True if load pretrained model')
+	parser.add_argument('--ft', type=bool, default=None,
+						help='True if finetune')
+	parser.add_argument('--resume', type=str, default=None)
 	parser.add_argument('--test', type=bool, default=False,
 						help='True if test mode')
 	
