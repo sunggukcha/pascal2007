@@ -216,6 +216,7 @@ class RandomCrop(object):
 
 		
 		
+# Supported
 
 class FixedResize(object):
     def __init__(self, size):
@@ -223,13 +224,13 @@ class FixedResize(object):
 
     def __call__(self, sample):
         img = sample['image']
-        mask = sample['label']
+        #mask = sample['label']
 
-        assert img.size == mask.size
+        #assert img.size == mask.size
 
         img = img.resize(self.size, Image.BILINEAR)
         if 'label' in sample:
             mask = sample['label']
-            mask = mask.resize(self.size, Image.NEAREST)
+            #mask = mask.resize(self.size, Image.NEAREST)
             return {'image': img, 'label': mask, 'name': sample['name']}
         return {'image': img, 'name': sample['name']}

@@ -53,8 +53,9 @@ class caltech101Classification(data.Dataset):
 			return self.transform_test(sample)
 
 	def transform_tr(self, sample):
-		composed_transforms = transform.Compose([
-			tr.Normalize(mean=[0.54584709 0.52875816 0.50213723] ,std=[0.24912914 0.2460751  0.24773671]),
+		composed_transforms = transforms.Compose([
+			tr.FixedResize(224),
+			tr.Normalize(mean=[0.54584709, 0.52875816, 0.50213723] ,std=[0.24912914, 0.2460751, 0.24773671]),
 			tr.ToTensor()])
 		return composed_transforms(sample)
 
@@ -84,10 +85,10 @@ class caltech101Classification(data.Dataset):
 				val.append(image)
 			else:
 				test.append(image)
-		print(len(train), len(val), len(test))
+		print("train:val:test ", len(train), len(val), len(test))
 		return train, val, test
 
 	def recursive_glob (self, rootdir='.', suffix=''):
 		return [os.path.join(looproot, filename)
 				for looproot, _, filenames in os.walk(rootdir)
-				for filename in filenames if filename.endwith(suffix)]
+				for filename in filenames if filename.endswith(suffix)]

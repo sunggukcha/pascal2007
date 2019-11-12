@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 
 # CODES FROM https://github.com/pytorch/examples/blob/master/imagenet/main.py
@@ -41,9 +42,3 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
-class Evaluator(object):
-    def __init__(self, num_class):
-        self.num_class = num_class
-
-	def topk(self, output, target, k):
-		

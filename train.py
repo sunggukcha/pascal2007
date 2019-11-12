@@ -1,7 +1,13 @@
+from utils.trainer import Trainer
+
 import argparse
 import os
 import torch
+import torchvision.models as models
 
+model_names = sorted(name for name in models.__dict__
+    if name.islower() and not name.startswith("__")
+    and callable(models.__dict__[name]))
 
 def get_args():
 	parser = argparse.ArgumentParser()
@@ -21,6 +27,7 @@ def get_args():
 						help='Number of workers for dataloader')
 
 	# training options
+	parser.add_argument('--dataset', type=str, default='caltech101')
 	parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
                     choices=model_names,
                     help='model architecture: ' +
@@ -33,6 +40,9 @@ def get_args():
 	parser.add_argument('--resume', type=str, default=None)
 	parser.add_argument('--test', type=bool, default=False,
 						help='True if test mode')
+	parser.add_argument('--start-epoch', type=int, default=0)
+	parser.add_argument('--no-val', type=bool, default=False,
+						help='True if train without validation')
 	
 	# hyper params
 	parser.add_argument('--lr', type=float, default=None,
@@ -49,6 +59,8 @@ def get_args():
 	parser.add_argument('--weight-decay', type=float, default=1e-4,
 						help='Weight decay')
 
+	return parser.parse_args()
+
 if __name__ == "__main__":
 	args = get_args()
 	args.cuda = torch.cuda.is_available()
@@ -58,6 +70,9 @@ if __name__ == "__main__":
 		except ValueError:
 			raise ValueError('Argument --gpu_ids must be a comma-separated list of integers only')
 	
+	if args.checkname == None:
+		args.checkname = args.arch
+
 	print(args)
 	torch.manual_seed(args.seed)
 	trainer = Trainer(args)

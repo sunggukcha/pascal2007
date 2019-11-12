@@ -3,6 +3,7 @@ from tqdm import tqdm
 from utils.lr_scheduler import LR_Scheduler
 from utils.metrics import *
 from utils.saver import Saver
+from utils.summaries import TensorboardSummary
 
 import os
 import torch
@@ -122,7 +123,7 @@ class Trainer(object):
 			if self.args.cuda:
 				image, target = image.cuda(), target.cuda()
 			with torch.no_grad():
-			output = self.model(image)
+				output = self.model(image)
 			loss = self.criterion(output, target)
 
 			#
@@ -130,28 +131,28 @@ class Trainer(object):
 
 			# top accuracy record
 			acc1, acc5 = accuracy(output, target, topk=(1, 5))
-			top1.update(acc1[0], images.size(0))
-			top5.update(acc5[0], images.size(0))
+			top1.update(acc1[0], image.size(0))
+			top5.update(acc5[0], image.size(0))
 
 			tbar.set_description('Test loss: %.3f' % (test_loss / (i + 1)))
 			pred = output.data.cpu().numpy()
 			target = target.cpu().numpy()
 			pred = np.argmax(pred, axis=1)
 			# Add batch sample into evaluator
-			self.evaluator.add_batch(target, pred)
+			#self.evaluator.add_batch(target, pred)
 
 		# Fast test during the training
 		_top1 = top1.avg
 		_top5 = top5.avg
 		self.writer.add_scalar('val/total_loss_epoch', test_loss, epoch)
-		self.writer.add_scalar('val/top1', top1, epoch)
-		self.writer.add_scalar('val/top5', top5, epoch)
+		self.writer.add_scalar('val/top1', _top1, epoch)
+		self.writer.add_scalar('val/top5', _top5, epoch)
 		print('Validation:')
 		print('[Epoch: %d, numImages: %5d]' % (epoch, i * self.args.batch_size + image.data.shape[0]))
-		print("Top-1:%.3f, Top-5:%.3f" % (top1, top5))
+		print("Top-1:%.3f, Top-5:%.3f" % (_top1, _top5))
 		print('Loss: %.3f' % test_loss)
 
-		new_pred = top5
+		new_pred = _top5
 		if new_pred > self.best_pred:
 			is_best = True
 			self.best_pred = new_pred
