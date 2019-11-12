@@ -1,4 +1,4 @@
-# Image classification training/validation/test script for Python/PyTorch
+# Image classification script for Python/PyTorch
 
 ### Supported dataset
 1. caltech101 for classification (http://www.vision.caltech.edu/Image_Datasets/Caltech101/)
