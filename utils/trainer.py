@@ -82,6 +82,9 @@ class Trainer(object):
 		if args.ft:
 			args.start_epoch = 0
 
+		# layer wise freezing
+		self.history = {}
+
 	def train(self, epoch):
 		train_loss = 0.0
 		self.model.train()
@@ -100,6 +103,10 @@ class Trainer(object):
 			self.writer.add_scalar('train/total_loss_iter', loss.item(), i + num_img_tr * epoch)
 		self.writer.add_scalar('train/total_loss_epoch', train_loss, epoch)
 		print("[epoch: %d, loss: %.3f]" % (epoch, train_loss))
+
+		if self.args.freeze:
+			for n, i in self.model.named_parameters():
+				self.history[str(epoch)+n] = i.cpu().detach()
 
 		if self.args.no_val:
 			is_best = False
@@ -150,10 +157,10 @@ class Trainer(object):
 		self.writer.add_scalar('val/top5', _top5, epoch)
 		print('Validation:')
 		print('[Epoch: %d, numImages: %5d]' % (epoch, i * self.args.batch_size + image.data.shape[0]))
-		print("Top-1:%.3f, Top-5:%.3f" % (_top1, _top5))
+		print("Top-1: %.3f, Top-5: %.3f" % (_top1, _top5))
 		print('Loss: %.3f' % test_loss)
 
-		new_pred = _top5
+		new_pred = _top1
 		if new_pred > self.best_pred:
 			is_best = True
 			self.best_pred = new_pred

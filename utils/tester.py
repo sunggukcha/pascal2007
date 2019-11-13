@@ -75,6 +75,13 @@ class Tester(object):
 		if args.ft:
 			args.start_epoch = 0
 
+		self.history = {}
+		for n, i in self.model.named_parameters():
+			break
+			print ('n ', n, ' endl')
+			print ('i ', i, ' endl')
+			exit()
+
 	def test(self):
 		self.model.eval()
 		
@@ -88,6 +95,5 @@ class Tester(object):
 			with torch.no_grad():
 				output = self.model(image)
 			pred = output.data.cpu().numpy()
-			print(pred.shape)
-			#pred = np.argmax(pred, axis=1)
-			tbar.set_description("{} : {}".format(name[0], self.id2class(output[0])))
+			pred = np.argmax(pred, axis=1)
+			tbar.set_description("{} : {}".format(name[0], self.id2class(pred[0])))

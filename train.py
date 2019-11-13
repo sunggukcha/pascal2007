@@ -44,6 +44,8 @@ def get_args():
 	parser.add_argument('--start-epoch', type=int, default=0)
 	parser.add_argument('--no-val', type=bool, default=False,
 						help='True if train without validation')
+	parser.add_argument('--freeze', default=False, action='store_true',
+						help='Layer wise freezing')
 	
 	# hyper params
 	parser.add_argument('--lr', type=float, default=None,

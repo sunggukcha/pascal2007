@@ -12,9 +12,6 @@ class Model(nn.Module):
 		self.backbone = models.__dict__[args.arch](pretrained=args.pretrained)
 		final_feature = self.backbone.fc.in_features
 		self.backbone.fc = nn.Linear(final_feature, self.nclass)
-		
-		print(self.backbone)
-		
 
 	def forward(self, input):
 		x = self.backbone(input)
