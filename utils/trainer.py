@@ -1,4 +1,5 @@
 from dataloaders import make_data_loader
+from models.model import Model
 from tqdm import tqdm
 from utils.lr_scheduler import LR_Scheduler
 from utils.metrics import *
@@ -33,7 +34,7 @@ class Trainer(object):
 		norm = bn
 
 		# Define Network
-		model = models.__dict__[args.arch](pretrained=args.pretrained)
+		model = Model(args, self.nclass)
 
 		
 		train_params = [{'params': model.parameters(), 'lr': args.lr}]

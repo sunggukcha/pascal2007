@@ -18,3 +18,7 @@ def make_data_loader(args, **kwargs):
 	else:
 		print("Dataloader for {} is not implemented".format(args.dataset))
 		raise NotImplementedError
+
+def make_id2class(args):
+	if args.dataset == 'caltech101':
+		return caltech.id2class

@@ -1,3 +1,4 @@
+from utils.tester import Tester
 from utils.trainer import Trainer
 
 import argparse
@@ -38,7 +39,7 @@ def get_args():
 	parser.add_argument('--ft', type=bool, default=None,
 						help='True if finetune')
 	parser.add_argument('--resume', type=str, default=None)
-	parser.add_argument('--test', type=bool, default=False,
+	parser.add_argument('--test', default=False, action='store_true',
 						help='True if test mode')
 	parser.add_argument('--start-epoch', type=int, default=0)
 	parser.add_argument('--no-val', type=bool, default=False,
@@ -75,13 +76,17 @@ if __name__ == "__main__":
 
 	print(args)
 	torch.manual_seed(args.seed)
-	trainer = Trainer(args)
-	print("Starting epoch: {}".format(trainer.args.start_epoch))
-	print("Total epochs: {}".format(trainer.args.epochs))
+	if not args.test:
+		trainer = Trainer(args)
+		print("Starting epoch: {}".format(trainer.args.start_epoch))
+		print("Total epochs: {}".format(trainer.args.epochs))
 
-	for epoch in range(trainer.args.start_epoch, trainer.args.epochs):
-		trainer.train(epoch)
-		if not trainer.args.no_val:
-			trainer.val(epoch)
+		for epoch in range(trainer.args.start_epoch, trainer.args.epochs):
+			trainer.train(epoch)
+			if not trainer.args.no_val:
+				trainer.val(epoch)
 
-	trainer.writer.close()
+		trainer.writer.close()
+	else:
+		tester = Tester(args)
+		tester.test()

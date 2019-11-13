@@ -4,16 +4,18 @@ import torch.nn.functional as F
 
 import torchvision.models as models
 
-model_names = sorted(name for name in models.__dict__
-					if name.islower() and not name.startswitih("__")
-					and callable(models.__dict__[name]))
-
 class Model(nn.Module):
-	def __init__(self, model):
+	def __init__(self, args, nclass):
 		super(Model, self).__init__()
 
-		self.backbone = build_backbone(model)
+		self.nclass = nclass
+		self.backbone = models.__dict__[args.arch](pretrained=args.pretrained)
+		final_feature = self.backbone.fc.in_features
+		self.backbone.fc = nn.Linear(final_feature, self.nclass)
+		
+		print(self.backbone)
+		
 
 	def forward(self, input):
 		x = self.backbone(input)
-		
+		return x
