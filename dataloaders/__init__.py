@@ -1,4 +1,4 @@
-from dataloaders.datasets import caltech
+from dataloaders.datasets import caltech, embedding
 from torch.utils.data import DataLoader
 
 def make_data_loader(args, **kwargs):
@@ -14,7 +14,11 @@ def make_data_loader(args, **kwargs):
 		test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=False, **kwargs)
 
 		return train_loader, val_loader, test_loader, num_classes
-
+	elif args.dataset == 'embedding':
+		dataset = embedding.Embedding(args)
+		num_classes = dataset.NUM_CLASSES
+		loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, **kwargs)
+		return loader, loader, loader, num_classes
 	else:
 		print("Dataloader for {} is not implemented".format(args.dataset))
 		raise NotImplementedError

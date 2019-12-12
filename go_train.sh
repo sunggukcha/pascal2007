@@ -1,7 +1,8 @@
-arch="resnet50"
+dataset="embedding"
+arch="resnet18"
 lr=0.01
-epochs=10
+epochs=50
 bs=32
 clear
 
-python train.py --arch $arch --lr $lr --epochs $epochs --batch-size $bs
+python train.py --dataset "embedding" --arch $arch --lr $lr --epochs $epochs --batch-size $bs
