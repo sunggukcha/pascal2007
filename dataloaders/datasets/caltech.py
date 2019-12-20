@@ -7,6 +7,7 @@
 '''
 
 import os
+import platform
 
 from PIL import Image
 from mypath import Path
@@ -39,6 +40,8 @@ class caltech101Classification(data.Dataset):
 		self.split	= split
 		self.args	= args
 		self.files	= {}
+
+		self.isWindow   = platform.system() == 'Windows'
 
 		random.seed(args.seed)
 		files = self.recursive_glob(rootdir=self.root, suffix='.jpg')
@@ -75,8 +78,9 @@ class caltech101Classification(data.Dataset):
 		return self.transform_tr(sample)
 
 	def getlabel(self, img_path):
-		ss = img_path.split('/')
-		return self.labels[ss[-2]]
+                if self.isWindow: ss = img_path.split('\\')
+                else: ss = img_path.split('/')
+                return self.labels[ss[-2]]
 
 	def id2class(self, ID):
 		global labels
