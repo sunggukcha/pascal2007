@@ -84,12 +84,15 @@ if __name__ == "__main__":
 		trainer = Trainer(args)
 		print("Starting epoch: {}".format(trainer.args.start_epoch))
 		print("Total epochs: {}".format(trainer.args.epochs))
-
+		if trainer.args.time: start = time.time()
 		for epoch in range(trainer.args.start_epoch, trainer.args.epochs):
 			trainer.train(epoch)
 			if not trainer.args.no_val and not trainer.args.time:
 				trainer.val(epoch)
 		if trainer.args.time:
+			now = time.time()
+			print(now - start)
+			print(trainer.histories)
 			trainer.val(epoch)
 		trainer.writer.close()
 	else:

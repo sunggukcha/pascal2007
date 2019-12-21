@@ -5,4 +5,4 @@ epochs=50
 bs=32
 clear
 
-python train.py --dataset $dataset --arch $arch --lr $lr --epochs $epochs --batch-size $bs
+python train.py --dataset $dataset --arch $arch --lr $lr --epochs $epochs --batch-size $bs --time

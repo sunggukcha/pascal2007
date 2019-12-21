@@ -1,18 +1,77 @@
 from dataloaders import make_data_loader
 from models.model import Model
+from tensorly.decomposition import partial_tucker
 from tqdm import tqdm
 from utils.lr_scheduler import LR_Scheduler
 from utils.metrics import *
 from utils.saver import Saver
 from utils.summaries import TensorboardSummary
+from utils.VBMF import VBMF
 
+import numpy as np
 import os
+import tensorly as tl
 import torch
 import torch.nn as nn
 import torchvision.models as models
 
 def bn(planes):
 	return nn.BatchNorm2d(planes)
+
+def estimate_ranks(layer):
+    """ Unfold the 2 modes of the Tensor the decomposition will 
+    be performed on, and estimates the ranks of the matrices using VBMF
+    source: https://github.com/jacobgil/pytorch-tensor-decompositions/blob/master/decompositions.py
+    """
+
+    weights = layer.weight.data
+    unfold_0 = tl.base.unfold(weights, 0) 
+    unfold_1 = tl.base.unfold(weights, 1)
+    _, diag_0, _, _ = VBMF.EVBMF(unfold_0)
+    _, diag_1, _, _ = VBMF.EVBMF(unfold_1)
+    ranks = [diag_0.shape[0], diag_1.shape[1]]
+    return ranks
+
+def tucker_decomposition_conv_layer(layer):
+    """ Gets a conv layer, 
+        returns a nn.Sequential object with the Tucker decomposition.
+        The ranks are estimated with a Python implementation of VBMF
+        https://github.com/CasvandenBogaard/VBMF
+        source: https://github.com/jacobgil/pytorch-tensor-decompositions/blob/master/decompositions.py
+    """
+
+    ranks = estimate_ranks(layer)
+    print(layer, "VBMF Estimated ranks", ranks)
+    core, [last, first] = \
+        partial_tucker(layer.weight.data, \
+            modes=[0, 1], ranks=ranks, init='svd')
+
+    # A pointwise convolution that reduces the channels from S to R3
+    first_layer = torch.nn.Conv2d(in_channels=first.shape[0], \
+            out_channels=first.shape[1], kernel_size=1,
+            stride=1, padding=0, dilation=layer.dilation, bias=False)
+
+    # A regular 2D convolution layer with R3 input channels 
+    # and R3 output channels
+    core_layer = torch.nn.Conv2d(in_channels=core.shape[1], \
+            out_channels=core.shape[0], kernel_size=layer.kernel_size,
+            stride=layer.stride, padding=layer.padding, dilation=layer.dilation,
+            bias=False)
+
+    # A pointwise convolution that increases the channels from R4 to T
+    last_layer = torch.nn.Conv2d(in_channels=last.shape[1], \
+        out_channels=last.shape[0], kernel_size=1, stride=1,
+        padding=0, dilation=layer.dilation, bias=True)
+
+    last_layer.bias.data = layer.bias.data
+
+    first_layer.weight.data = \
+        torch.transpose(first, 1, 0).unsqueeze(-1).unsqueeze(-1)
+    last_layer.weight.data = last.unsqueeze(-1).unsqueeze(-1)
+    core_layer.weight.data = core
+
+    new_layers = [first_layer, core_layer, last_layer]
+    return nn.Sequential(*new_layers)
 
 class Trainer(object):
 	def __init__(self, args):
@@ -83,13 +142,19 @@ class Trainer(object):
 			args.start_epoch = 0
 
 		# layer wise freezing
+		self.histories = []
 		self.history = {}
+		self.isTrained = False
+		self.freeze_count = 0
+		self.total_count = 0
+		for i in model.parameters(): self.total_count += 1
 
 	def train(self, epoch):
 		train_loss = 0.0
 		self.model.train()
 		tbar = tqdm(self.train_loader)
 		num_img_tr = len(self.train_loader)
+		if self.isTrained: return
 		for i, sample in enumerate(tbar):
 			image, target = sample['image'].cuda(), sample['label'].cuda()
 			self.scheduler(self.optimizer, i, epoch, self.best_pred)
@@ -104,14 +169,34 @@ class Trainer(object):
 		self.writer.add_scalar('train/total_loss_epoch', train_loss, epoch)
 		print("[epoch: %d, loss: %.3f]" % (epoch, train_loss))
 
-		if self.args.freeze:
+		M = 0
+
+		if self.args.freeze or self.args.time:
 			for n, i in self.model.named_parameters():
 				self.history[str(epoch)+n] = i.cpu().detach()
 			if epoch >= 1:
-				for n, i in model.named_parameters():
+				for n, i in self.model.named_parameters():
+					if not 'conv' in n or not 'layer' in n: continue
 					dif = self.history[str(epoch)+n] - self.history[str(epoch-1)+n]
 					m = np.abs(dif).mean()
-					if m < 1e-04: i.requires_grad = False
+					if m < 1e-04:
+						M += 1
+						if i.requires_grad and self.args.freeze:
+							i.requires_grad = False
+							self.freeze_count += 1
+							if not self.args.decomp: continue
+							name = n.split('.')
+							if name[0] == 'layer1': layer=self.model.layer1
+							elif name[0] == 'layer2': layer=self.model.layer2
+							elif name[0] == 'layer3': layer=self.model.layer3
+							elif name[0] == 'layer4': layer=self.model.layer4
+							else: continue
+							conv = layer._modules[ int(name[1]) ]
+							dec = tucker_decomposition_conv_layer(conv)
+							layer._modules[ int(name[1]) ] = dec
+				if self.freeze_count == self.total_count: self.isTrained = True
+			if not self.args.freeze and self.args.time: self.histories.append( (epoch, M) )
+			else: self.histories.append( (epoch, self.freeze_count) )
 
 		if self.args.no_val and not self.args.time:
 			is_best = False
