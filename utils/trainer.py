@@ -107,8 +107,13 @@ class Trainer(object):
 		if self.args.freeze:
 			for n, i in self.model.named_parameters():
 				self.history[str(epoch)+n] = i.cpu().detach()
+			if epoch >= 1:
+				for n, i in model.named_parameters():
+					dif = self.history[str(epoch)+n] - self.history[str(epoch-1)+n]
+					m = np.abs(dif).mean()
+					if m < 1e-04: i.requires_grad = False
 
-		if self.args.no_val:
+		if self.args.no_val and not self.args.time:
 			is_best = False
 			self.saver.save_checkpoint(
 				{'epoch' : epoch + 1,

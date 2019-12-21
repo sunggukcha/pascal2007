@@ -3,6 +3,7 @@ from utils.trainer import Trainer
 
 import argparse
 import os
+import time
 import torch
 import torchvision.models as models
 
@@ -46,6 +47,7 @@ def get_args():
 						help='True if train without validation')
 	parser.add_argument('--freeze', default=False, action='store_true',
 						help='Layer wise freezing')
+	parser.add_argument('--time', default=False, action='store_true')
 	
 	# hyper params
 	parser.add_argument('--lr', type=float, default=None,
@@ -85,9 +87,10 @@ if __name__ == "__main__":
 
 		for epoch in range(trainer.args.start_epoch, trainer.args.epochs):
 			trainer.train(epoch)
-			if not trainer.args.no_val:
+			if not trainer.args.no_val and not trainer.args.time:
 				trainer.val(epoch)
-
+		if trainer.args.time:
+			trainer.val(epoch)
 		trainer.writer.close()
 	else:
 		tester = Tester(args)
