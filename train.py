@@ -48,6 +48,7 @@ def get_args():
 	parser.add_argument('--freeze', default=False, action='store_true',
 						help='Layer wise freezing')
 	parser.add_argument('--time', default=False, action='store_true')
+	parser.add_argument('--decomp', default=False, action='store_true')
 	
 	# hyper params
 	parser.add_argument('--lr', type=float, default=None,
