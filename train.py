@@ -31,7 +31,6 @@ def get_args():
 	# training options
 	parser.add_argument('--dataset', type=str, default='caltech101')
 	parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
-                    choices=model_names,
                     help='model architecture: ' +
                         ' | '.join(model_names) +
                         ' (default: resnet18)')
